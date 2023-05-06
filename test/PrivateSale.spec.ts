@@ -30,6 +30,7 @@ describe("PrivateSale", () => {
 
     let startTime: number;
     let endTime: number;
+    let aidropStartTime: number;
 
     const privateSaleSupply = ethers.utils.parseEther("1300000");
 
@@ -50,9 +51,10 @@ describe("PrivateSale", () => {
 
         startTime = (await ethers.provider.getBlock("latest")).timestamp + 60;
         endTime = startTime + 86400;
+        aidropStartTime = endTime + 86400;
 
         const privateSaleFactory = await ethers.getContractFactory("PrivateSale");
-        privateSale = (await privateSaleFactory.deploy(token.address, startTime, endTime)) as PrivateSale;
+        privateSale = (await privateSaleFactory.deploy(token.address, startTime, endTime, aidropStartTime)) as PrivateSale;
 
         await token.transfer(privateSale.address, privateSaleSupply);
     });
@@ -133,6 +135,20 @@ describe("PrivateSale", () => {
             await expect(privateSale.connect(alice).airdrop([alice.address])).to.changeEtherBalance(alice, ethers.utils.parseEther("0.2").sub(1));
         });
 
+        it("should revert if the airdrop start time has not been reached", async function () {
+            await increaseTime(60);
+            await privateSale.connect(alice).buy({ value: ethers.utils.parseEther("40") });
+            await privateSale.connect(bob).buy({ value: ethers.utils.parseEther("40") });
+            await privateSale.connect(carol).buy({ value: ethers.utils.parseEther("35") });
+            await privateSale.connect(dan).buy({ value: ethers.utils.parseEther("20") });
+            await privateSale.connect(eve).buy({ value: ethers.utils.parseEther("20") });
+            await increaseTime(60 * 60 * 24 + 1);
+
+            await privateSale.endSale();
+
+            await expect(privateSale.connect(alice).airdrop([alice.address])).to.be.revertedWith("Airdrop has not started yet");
+        });
+
         it("should correctly claim tokens", async function () {
             await increaseTime(60);
             await privateSale.connect(alice).buy({ value: ethers.utils.parseEther("40") });
@@ -143,6 +159,8 @@ describe("PrivateSale", () => {
             await increaseTime(60 * 60 * 24 + 1);
 
             await privateSale.endSale();
+
+            await increaseTime(60 * 60 * 24 + 1);
 
             await privateSale.connect(alice).airdrop([alice.address]);
 

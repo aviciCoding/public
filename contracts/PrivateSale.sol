@@ -53,6 +53,11 @@ contract PrivateSale is Ownable {
     uint256 public end;
 
     /**
+     * @notice The start date of the airdrop in unix timestamp.
+     */
+    uint256 public airdropStart;
+
+    /**
      * @notice The amount of tokens bought by each address.
      */
     mapping(address => uint256) public amountBought;
@@ -95,12 +100,14 @@ contract PrivateSale is Ownable {
      */
     event SaleEnded(uint256 totalAmountBought, bool softCapReached);
 
-    constructor(IHoudiniToken _houdiniToken, uint256 _start, uint256 _end) {
+    constructor(IHoudiniToken _houdiniToken, uint256 _start, uint256 _end, uint256 _airdropStart) {
         houdiniToken = _houdiniToken;
         vestingContract = IVestingContract(houdiniToken.getVestingContract());
 
         start = _start;
         end = _end;
+
+        airdropStart = _airdropStart;
     }
 
     /**
@@ -137,6 +144,8 @@ contract PrivateSale is Ownable {
      */
     function airdrop(address[] calldata _buyers) external {
         require(saleEnded, "Sale has not ended yet");
+
+        if (softCapReached) require(block.timestamp >= airdropStart, "Airdrop has not started yet");
 
         for (uint256 i = 0; i < _buyers.length; i++) {
             // Check if the buyer has bought tokens

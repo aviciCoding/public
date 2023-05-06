@@ -20,6 +20,7 @@ describe("PublicSale", () => {
 
     let startTime: number;
     let endTime: number;
+    let aidropStartTime: number;
 
     const publicSaleSupply = ethers.utils.parseEther("1800000");
 
@@ -40,9 +41,10 @@ describe("PublicSale", () => {
 
         startTime = (await ethers.provider.getBlock("latest")).timestamp + 60;
         endTime = startTime + 86400;
+        aidropStartTime = endTime + 86400;
 
         const publicSaleFactory = await ethers.getContractFactory("PublicSale");
-        publicSale = (await publicSaleFactory.deploy(token.address, startTime, endTime)) as PublicSale;
+        publicSale = (await publicSaleFactory.deploy(token.address, startTime, endTime, aidropStartTime)) as PublicSale;
 
         await token.transfer(publicSale.address, publicSaleSupply);
     });
@@ -105,6 +107,18 @@ describe("PublicSale", () => {
             await expect(publicSale.connect(alice).airdrop([alice.address])).to.changeEtherBalance(alice, ethers.utils.parseEther("0.2").sub(1));
         });
 
+        it("should revert if the airdrop start time has not been reached", async function () {
+            await increaseTime(60);
+            await publicSale.connect(alice).buy({ value: ethers.utils.parseEther("60") });
+            await publicSale.connect(bob).buy({ value: ethers.utils.parseEther("60") });
+            await publicSale.connect(carol).buy({ value: ethers.utils.parseEther("60") });
+            await increaseTime(60 * 60 * 24 + 1);
+
+            await publicSale.endSale();
+
+            await expect(publicSale.connect(alice).airdrop([alice.address])).to.be.revertedWith("Airdrop has not started yet");
+        });
+
         it("should correctly claim tokens", async function () {
             await increaseTime(60);
             await publicSale.connect(alice).buy({ value: ethers.utils.parseEther("60") });
@@ -113,6 +127,8 @@ describe("PublicSale", () => {
             await increaseTime(60 * 60 * 24 + 1);
 
             await publicSale.endSale();
+
+            await increaseTime(60 * 60 * 24 + 1);
 
             await publicSale.connect(alice).airdrop([alice.address]);
 
