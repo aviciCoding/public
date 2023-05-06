@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./VestingContract.sol";
 
-contract HoudiniToklen is ERC20, Initializable {
+contract HoudiniToken is ERC20, Initializable {
     VestingContract vestingContract;
 
     uint256 public constant TOTAL_SUPPLY = 10_000_000 * 10 ** 18;
@@ -13,7 +13,7 @@ contract HoudiniToklen is ERC20, Initializable {
     uint256 public constant PRIVATE_SALE = 1_800_000 * 10 ** 18;
     uint256 public constant PUBLIC_SALE = 1_300_000 * 10 ** 18;
     uint256 public constant COMMUNITY_AIRDROP = 1_000_000 * 10 ** 18;
-    uint256 public constant MARKETING_DEVELOPMENT = 1_000_000 * 10 ** 18;
+    uint256 public constant MARKETING_DEVELOPMENT = 800_000 * 10 ** 18;
     uint256 public constant TEAM = 500_000 * 10 ** 18;
     uint256 public constant LIQUIDITY = 100_000 * 10 ** 18;
 
@@ -39,15 +39,15 @@ contract HoudiniToklen is ERC20, Initializable {
         // Private & Public Sale tokens are sent to the project wallet to be added to the ICO contracts
         _transfer(address(this), wallets[0], PRIVATE_SALE + PUBLIC_SALE);
         // Liquidity is fully unlocked at tge
-        _transfer(address(this), wallets[4], LIQUIDITY);
+        _transfer(address(this), wallets[5], LIQUIDITY);
     }
 
-    function initializeVesting() external {
+    function initializeVesting() external initializer {
         // Rewards will be vested with a 2 weeks cliff and then unlocked for 10% monthly
         // (starts 2 weeks in the past to unlock 10% imediately after 2 weeks)
         _approve(address(this), address(vestingContract), REWARDS);
         vestingContract.createVestingSchedule(
-            wallets[0], block.timestamp - 2 weeks, 10, VestingContract.DurationUnits.Months, REWARDS
+            wallets[1], block.timestamp - 2 weeks, 10, VestingContract.DurationUnits.Months, REWARDS
         );
 
         // Community Airdrop tokens will be vested on july 1st 2023
