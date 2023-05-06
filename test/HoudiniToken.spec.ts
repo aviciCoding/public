@@ -4,7 +4,6 @@ import chaiAsPromised from "chai-as-promised";
 import { ethers } from "hardhat";
 
 import { HoudiniToken, VestingContract } from "../typechain-types";
-import { string } from "hardhat/internal/core/params/argumentTypes";
 
 chai.use(chaiAsPromised);
 

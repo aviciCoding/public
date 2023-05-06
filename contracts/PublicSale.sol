@@ -9,7 +9,7 @@ contract PublicSale {
     IVestingContract public immutable vestingContract;
 
     uint256 public constant TOTAL_SALE_AMOUNT = 1_800_000 * 10 ** 18;
-    uint256 public constant PRICE = 0.00026 ether; // 1 HDNI = 0.00026 ETH
+    uint256 public constant PRICE = HARD_CAP * 1e18 / TOTAL_SALE_AMOUNT;
     uint256 public constant SOFT_CAP = 160 ether;
     uint256 public constant HARD_CAP = 345 ether;
 
@@ -77,11 +77,9 @@ contract PublicSale {
      */
     event SaleEnded(uint256 totalAmountBought, bool softCapReached);
 
-    constructor(IHoudiniToken _houdiniToken, IVestingContract _vestingContract, uint256 _start, uint256 _end) {
+    constructor(IHoudiniToken _houdiniToken, uint256 _start, uint256 _end) {
         houdiniToken = _houdiniToken;
-        vestingContract = _vestingContract;
-
-        houdiniToken.transferFrom(msg.sender, address(this), TOTAL_SALE_AMOUNT);
+        vestingContract = IVestingContract(houdiniToken.getVestingContract());
 
         start = _start;
         end = _end;
@@ -101,7 +99,7 @@ contract PublicSale {
         // Compute the amount of tokens bought
         uint256 tokensBought = msg.value * 10 ** 18 / PRICE;
 
-        require(totalTokensBought + tokensBought < TOTAL_SALE_AMOUNT, "Sale has ended");
+        require(totalTokensBought + tokensBought < TOTAL_SALE_AMOUNT, "Hard cap reached");
 
         // Update the storage variables
         amountBought[msg.sender] += tokensBought;
@@ -134,6 +132,7 @@ contract PublicSale {
 
                 // Send the TGE tokens and create a vesting schedule for the rest
                 houdiniToken.transfer(_buyers[i], amountToSend);
+                houdiniToken.approve(address(vestingContract), amountToVest);
                 vestingContract.createVestingSchedule(
                     _buyers[i], block.timestamp, 3, IVestingContract.DurationUnits.Weeks, amountToVest
                 );
@@ -177,5 +176,7 @@ contract PublicSale {
             // If the soft cap is not reached, send the unsold tokens back to the owner
             houdiniToken.transfer(owner, TOTAL_SALE_AMOUNT);
         }
+
+        emit SaleEnded(totalTokensBought, softCapReached);
     }
 }
