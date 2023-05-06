@@ -3,13 +3,14 @@ pragma solidity ^0.8.0;
 
 import "./interfaces/IVestingContract.sol";
 import "./interfaces/IHoudiniToken.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract PrivateSale {
+contract PrivateSale is Ownable {
     IHoudiniToken public immutable houdiniToken;
     IVestingContract public immutable vestingContract;
 
     uint256 public constant TOTAL_SALE_AMOUNT = 1_300_000 * 10 ** 18;
-    uint256 public constant PRICE = 0.00013 ether; // 1 HDNI = 0.00013 ETH
+    uint256 public constant PRICE = HARD_CAP * 1e18 / TOTAL_SALE_AMOUNT;
     uint256 public constant SOFT_CAP = 125 ether;
     uint256 public constant HARD_CAP = 240 ether;
 
@@ -19,16 +20,12 @@ contract PrivateSale {
     uint256 public constant DIAMOND_TIER_ALLOCATION = TOTAL_SALE_AMOUNT * 5000 / 10000; // 50%
 
     enum Tier {
+        NULL,
         J,
         GOLD,
         PLATINUM,
         DIAMOND
     }
-
-    /**
-     * @notice The address of the deployer, which will receive the raised ETH.
-     */
-    address public immutable owner;
 
     /**
      * @notice Whether the soft cap has been reached.
@@ -98,16 +95,12 @@ contract PrivateSale {
      */
     event SaleEnded(uint256 totalAmountBought, bool softCapReached);
 
-    constructor(IHoudiniToken _houdiniToken, IVestingContract _vestingContract, uint256 _start, uint256 _end) {
+    constructor(IHoudiniToken _houdiniToken, uint256 _start, uint256 _end) {
         houdiniToken = _houdiniToken;
-        vestingContract = _vestingContract;
-
-        houdiniToken.transferFrom(msg.sender, address(this), TOTAL_SALE_AMOUNT);
+        vestingContract = IVestingContract(houdiniToken.getVestingContract());
 
         start = _start;
         end = _end;
-
-        owner = msg.sender;
     }
 
     /**
@@ -127,7 +120,7 @@ contract PrivateSale {
 
         // Check if there are enough tokens left for this tier
         uint256 availableForTier = getAvailableForTier(_tier);
-        require(availableForTier >= tokensBought, "Not enough tokens left for this tier");
+        require(availableForTier >= tokensBought, "Not enough tokens left for this tier or no tier");
 
         // Update the storage variables
         amountBought[msg.sender] += tokensBought;
@@ -161,6 +154,7 @@ contract PrivateSale {
 
                 // Send the TGE tokens and create a vesting schedule for the rest
                 houdiniToken.transfer(_buyers[i], amountToSend);
+                houdiniToken.approve(address(vestingContract), amountToVest);
                 vestingContract.createVestingSchedule(
                     _buyers[i], block.timestamp, 3, IVestingContract.DurationUnits.Weeks, amountToVest
                 );
@@ -194,15 +188,28 @@ contract PrivateSale {
 
             // Send the raised ETH to the owner
             if (TOTAL_SALE_AMOUNT > totalTokensBought) {
-                houdiniToken.transfer(owner, TOTAL_SALE_AMOUNT - totalTokensBought);
+                houdiniToken.transfer(owner(), TOTAL_SALE_AMOUNT - totalTokensBought);
             }
 
             // Send the raised ETH to the owner
-            (bool sc,) = payable(owner).call{value: address(this).balance}("");
+            (bool sc,) = payable(owner()).call{value: address(this).balance}("");
             require(sc, "Transfer failed");
         } else {
             // If the soft cap is not reached, send the unsold tokens back to the owner
-            houdiniToken.transfer(owner, TOTAL_SALE_AMOUNT);
+            houdiniToken.transfer(owner(), TOTAL_SALE_AMOUNT);
+        }
+
+        emit SaleEnded(totalTokensBought, softCapReached);
+    }
+
+    /**
+     * @notice Adds addresses to a tier
+     * @param _buyers Array of addresses to add to the tier
+     * @param _tier The tier to add the addresses to
+     */
+    function addTier(address[] calldata _buyers, Tier _tier) external onlyOwner {
+        for (uint256 i = 0; i < _buyers.length; i++) {
+            tier[_buyers[i]] = _tier;
         }
     }
 
@@ -210,7 +217,8 @@ contract PrivateSale {
      * @notice Gets the amount of tokens available for a tier.
      * @param _tier The tier to get the available tokens for.
      */
-    function getAvailableForTier(Tier _tier) internal view returns (uint256) {
+    function getAvailableForTier(Tier _tier) internal view returns (uint256 availableAmount) {
+        if (_tier == Tier.NULL) return 0;
         if (_tier == Tier.J) {
             return J_TIER_ALLOCATION - tierTotalBought[Tier.J];
         } else if (_tier == Tier.GOLD) {
