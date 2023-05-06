@@ -202,4 +202,16 @@ describe("PrivateSale", () => {
             expect(await privateSale.saleEnded()).to.be.true;
         });
     });
+
+    describe("addTier", function () {
+        it("revert if caller in not the owner", async function () {
+            await expect(privateSale.connect(alice).addTier([alice.address], Tier.DIAMOND)).to.be.revertedWith("Ownable: caller is not the owner");
+        });
+
+        it("should correctly add a tier", async function () {
+            await privateSale.addTier([alice.address], Tier.DIAMOND);
+
+            expect(await privateSale.tier(alice.address)).to.equal(Tier.DIAMOND);
+        });
+    });
 });
