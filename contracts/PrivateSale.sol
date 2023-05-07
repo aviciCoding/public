@@ -9,17 +9,12 @@ contract PrivateSale is Ownable {
     IHoudiniToken public immutable houdiniToken;
     IVestingContract public immutable vestingContract;
 
-    uint256 public constant TOTAL_SALE_AMOUNT = 1_300_000 * 10 ** 18;
+    uint256 public constant TOTAL_SALE_AMOUNT = 1_800_000 * 10 ** 18;
     uint256 public constant PRICE = HARD_CAP * 1e18 / TOTAL_SALE_AMOUNT;
     uint256 public constant SOFT_CAP = 125 ether;
     uint256 public constant HARD_CAP = 240 ether;
 
-    uint256 public constant J_TIER_ALLOCATION = TOTAL_SALE_AMOUNT * 0 / 10000; // 0%
-    uint256 public constant GOLD_TIER_ALLOCATION = TOTAL_SALE_AMOUNT * 2000 / 10000; // 20%
-    uint256 public constant PLATINUM_TIER_ALLOCATION = TOTAL_SALE_AMOUNT * 3000 / 10000; // 30%
-    uint256 public constant DIAMOND_TIER_ALLOCATION = TOTAL_SALE_AMOUNT * 5000 / 10000; // 50%
-
-    uint256 public constant J_TIER_MAX_ALLOCATION_USER = 1 ether * 1e18 / PRICE;
+    uint256 public constant J_TIER_MAX_ALLOCATION_USER = 0.03 ether * 1e18 / PRICE;
     uint256 public constant GOLD_TIER_MAX_ALLOCATION_USER = 2.5 ether * 1e18 / PRICE;
     uint256 public constant PLATINUM_TIER_MAX_ALLOCATION_USER = 5 ether * 1e18 / PRICE;
 
@@ -75,13 +70,14 @@ contract PrivateSale is Ownable {
      * @notice The total amount of tokens bought in each tier.
      */
     mapping(Tier => uint256) public tierTotalBought;
+
     /**
      * @notice Emits when tokens are bought.
      * @param buyer The address of the buyer.
      * @param amount The amount of tokens bought.
+     * @param tier The tier of the buyer.
      */
-
-    event TokensBought(address indexed buyer, uint256 amount);
+    event TokensBought(address indexed buyer, uint256 amount, Tier tier);
 
     /**
      * @notice Emits when tokens are claimed.
@@ -129,14 +125,13 @@ contract PrivateSale is Ownable {
         // Compute the amount of tokens bought
         uint256 tokensBought = msg.value * 10 ** 18 / PRICE;
 
-        // Check if there are enough tokens left for this tier
-        uint256 availableForTier = getAvailableForTier(_tier);
-        require(availableForTier >= tokensBought, "Not enough tokens left for this tier or no tier");
-
         // Update the storage variables
         amountBought[msg.sender] += tokensBought;
 
         // Check if the alocation per user has been reached
+        if (_tier == Tier.NULL) {
+            revert("No tier assigned");
+        }
         if (_tier == Tier.J) {
             require(amountBought[msg.sender] <= J_TIER_MAX_ALLOCATION_USER, "Allocation per user reached");
         }
@@ -152,7 +147,7 @@ contract PrivateSale is Ownable {
         tierTotalBought[_tier] += tokensBought;
         totalTokensBought += tokensBought;
 
-        emit TokensBought(msg.sender, tokensBought);
+        emit TokensBought(msg.sender, tokensBought, _tier);
     }
 
     /**
@@ -237,23 +232,6 @@ contract PrivateSale is Ownable {
     function addTier(address[] calldata _buyers, Tier _tier) external onlyOwner {
         for (uint256 i = 0; i < _buyers.length; i++) {
             tier[_buyers[i]] = _tier;
-        }
-    }
-
-    /**
-     * @notice Gets the amount of tokens available for a tier.
-     * @param _tier The tier to get the available tokens for.
-     */
-    function getAvailableForTier(Tier _tier) internal view returns (uint256 availableAmount) {
-        if (_tier == Tier.NULL) return 0;
-        if (_tier == Tier.J) {
-            return J_TIER_ALLOCATION - tierTotalBought[Tier.J];
-        } else if (_tier == Tier.GOLD) {
-            return GOLD_TIER_ALLOCATION - tierTotalBought[Tier.GOLD];
-        } else if (_tier == Tier.PLATINUM) {
-            return PLATINUM_TIER_ALLOCATION - tierTotalBought[Tier.PLATINUM];
-        } else if (_tier == Tier.DIAMOND) {
-            return DIAMOND_TIER_ALLOCATION - tierTotalBought[Tier.DIAMOND];
         }
     }
 }

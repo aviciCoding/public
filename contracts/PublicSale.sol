@@ -8,7 +8,7 @@ contract PublicSale {
     IHoudiniToken public immutable houdiniToken;
     IVestingContract public immutable vestingContract;
 
-    uint256 public constant TOTAL_SALE_AMOUNT = 1_800_000 * 10 ** 18;
+    uint256 public constant TOTAL_SALE_AMOUNT = 1_300_000 * 10 ** 18;
     uint256 public constant PRICE = HARD_CAP * 1e18 / TOTAL_SALE_AMOUNT;
     uint256 public constant SOFT_CAP = 160 ether;
     uint256 public constant HARD_CAP = 345 ether;

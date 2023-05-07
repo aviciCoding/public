@@ -22,7 +22,7 @@ describe("PublicSale", () => {
     let endTime: number;
     let aidropStartTime: number;
 
-    const publicSaleSupply = ethers.utils.parseEther("1800000");
+    const publicSaleSupply = ethers.utils.parseEther("1300000");
 
     const increaseTime = async (seconds: number) => {
         await ethers.provider.send("evm_increaseTime", [seconds]);

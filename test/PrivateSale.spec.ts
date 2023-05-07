@@ -32,7 +32,7 @@ describe("PrivateSale", () => {
     let endTime: number;
     let aidropStartTime: number;
 
-    const privateSaleSupply = ethers.utils.parseEther("1300000");
+    const privateSaleSupply = ethers.utils.parseEther("1800000");
 
     const increaseTime = async (seconds: number) => {
         await ethers.provider.send("evm_increaseTime", [seconds]);
@@ -86,14 +86,14 @@ describe("PrivateSale", () => {
 
         it("should revert if buyer has no tier", async function () {
             await increaseTime(60);
-            await expect(privateSale.connect(alice).buy({ value: ethers.utils.parseEther("0.2") })).to.be.revertedWith("Not enough tokens left for this tier or no tier");
+            await expect(privateSale.connect(alice).buy({ value: ethers.utils.parseEther("0.2") })).to.be.revertedWith("No tier assigned");
         });
 
-        it("should revert if the per user allocation is exceeded", async function () {
+        it("should revert if the per user allocation is exceeded per 1 buy tx", async function () {
             await increaseTime(60);
 
-            // await privateSale.addTier([alice.address], Tier.J);
-            // await expect(privateSale.connect(alice).buy({ value: ethers.utils.parseEther("1.0001") })).to.be.revertedWith("Allocation per user reached");
+            await privateSale.addTier([alice.address], Tier.J);
+            await expect(privateSale.connect(alice).buy({ value: ethers.utils.parseEther("0.03001") })).to.be.revertedWith("Allocation per user reached");
 
             await privateSale.addTier([bob.address], Tier.GOLD);
             await expect(privateSale.connect(bob).buy({ value: ethers.utils.parseEther("2.5001") })).to.be.revertedWith("Allocation per user reached");
@@ -102,15 +102,23 @@ describe("PrivateSale", () => {
             await expect(privateSale.connect(carol).buy({ value: ethers.utils.parseEther("5.0001") })).to.be.revertedWith("Allocation per user reached");
         });
 
-        it("should rever if thier total allocation is exceeded", async function () {
+        it("should revert if the per user allocation is exceeded per multiple buy tx", async function () {
             await increaseTime(60);
-            await privateSale.addTier([alice.address, bob.address, carol.address], Tier.DIAMOND);
 
-            await privateSale.connect(alice).buy({ value: ethers.utils.parseEther("40") })
-            await privateSale.connect(bob).buy({ value: ethers.utils.parseEther("40") })
-            await privateSale.connect(carol).buy({ value: ethers.utils.parseEther("20") })
+            await privateSale.addTier([alice.address], Tier.J);
+            await privateSale.connect(alice).buy({ value: ethers.utils.parseEther("0.015") });
+            await privateSale.connect(alice).buy({ value: ethers.utils.parseEther("0.015") });
+            await expect(privateSale.connect(alice).buy({ value: ethers.utils.parseEther("0.0001") })).to.be.revertedWith("Allocation per user reached");
 
-            await expect(privateSale.connect(carol).buy({ value: ethers.utils.parseEther("20") })).to.be.revertedWith("Not enough tokens left for this tier or no tier");
+            await privateSale.addTier([bob.address], Tier.GOLD);
+            await privateSale.connect(bob).buy({ value: ethers.utils.parseEther("1.25") });
+            await privateSale.connect(bob).buy({ value: ethers.utils.parseEther("1.25") });
+            await expect(privateSale.connect(bob).buy({ value: ethers.utils.parseEther("0.0001") })).to.be.revertedWith("Allocation per user reached");
+
+            await privateSale.addTier([carol.address], Tier.PLATINUM);
+            await privateSale.connect(carol).buy({ value: ethers.utils.parseEther("2.5") });
+            await privateSale.connect(carol).buy({ value: ethers.utils.parseEther("2.5") });
+            await expect(privateSale.connect(carol).buy({ value: ethers.utils.parseEther("0.0001") })).to.be.revertedWith("Allocation per user reached");
         });
 
         it("should correctly buy tokens", async function () {
@@ -119,7 +127,7 @@ describe("PrivateSale", () => {
 
             const expectedToeknsBought = ethers.utils.parseEther("0.2").mul(ethers.utils.parseEther("1")).div(await privateSale.PRICE())
 
-            await expect(privateSale.connect(alice).buy({ value: ethers.utils.parseEther("0.2") })).to.emit(privateSale, "TokensBought").withArgs(alice.address, expectedToeknsBought)
+            await expect(privateSale.connect(alice).buy({ value: ethers.utils.parseEther("0.2") })).to.emit(privateSale, "TokensBought").withArgs(alice.address, expectedToeknsBought, Tier.DIAMOND)
             expect(await privateSale.totalTokensBought()).to.equal(expectedToeknsBought)
             expect(await privateSale.amountBought(alice.address)).to.equal(expectedToeknsBought);
             expect(await privateSale.tierTotalBought(Tier.DIAMOND)).to.equal(expectedToeknsBought);
