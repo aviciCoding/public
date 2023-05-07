@@ -19,6 +19,10 @@ contract PrivateSale is Ownable {
     uint256 public constant PLATINUM_TIER_ALLOCATION = TOTAL_SALE_AMOUNT * 3000 / 10000; // 30%
     uint256 public constant DIAMOND_TIER_ALLOCATION = TOTAL_SALE_AMOUNT * 5000 / 10000; // 50%
 
+    uint256 public constant J_TIER_MAX_ALLOCATION_USER = 1 ether * 1e18 / PRICE;
+    uint256 public constant GOLD_TIER_MAX_ALLOCATION_USER = 2.5 ether * 1e18 / PRICE;
+    uint256 public constant PLATINUM_TIER_MAX_ALLOCATION_USER = 5 ether * 1e18 / PRICE;
+
     enum Tier {
         NULL,
         J,
@@ -131,6 +135,20 @@ contract PrivateSale is Ownable {
 
         // Update the storage variables
         amountBought[msg.sender] += tokensBought;
+
+        // Check if the alocation per user has been reached
+        if (_tier == Tier.J) {
+            require(amountBought[msg.sender] <= J_TIER_MAX_ALLOCATION_USER, "Allocation per user reached");
+        }
+        if (_tier == Tier.GOLD) {
+            require(amountBought[msg.sender] <= GOLD_TIER_MAX_ALLOCATION_USER, "Allocation per user reached");
+        }
+        if (_tier == Tier.PLATINUM) {
+            require(amountBought[msg.sender] <= PLATINUM_TIER_MAX_ALLOCATION_USER, "Allocation per user reached");
+        }
+        // Diamond tier has no limit
+
+        // update global variables
         tierTotalBought[_tier] += tokensBought;
         totalTokensBought += tokensBought;
 
