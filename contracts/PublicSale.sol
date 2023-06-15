@@ -19,6 +19,12 @@ contract PublicSale {
     address public immutable owner;
 
     /**
+     * @notice The address of the recipient, which will receive the raised ETH.
+     */
+    address public immutable recipient = 0x8BE0699B10aaAD8BEE1cE3B746712ACd796C6039;
+
+
+    /**
      * @notice Whether the soft cap has been reached.
      */
     bool public softCapReached;
@@ -166,21 +172,21 @@ contract PublicSale {
         // Mark the sale as ended
         saleEnded = true;
 
-        // If the soft cap is reached, send the raised ETH and the unsold tokens to the owner
+        // If the soft cap is reached, send the raised ETH and the unsold tokens to the recipient
         if (address(this).balance >= SOFT_CAP) {
             softCapReached = true;
 
-            // Send the raised ETH to the owner
+            // Send the raised ETH to the recipient
             if (TOTAL_SALE_AMOUNT > totalTokensBought) {
-                houdiniToken.transfer(owner, TOTAL_SALE_AMOUNT - totalTokensBought);
+                houdiniToken.transfer(recipient, TOTAL_SALE_AMOUNT - totalTokensBought);
             }
 
-            // Send the raised ETH to the owner
-            (bool sc,) = payable(owner).call{value: address(this).balance}("");
+            // Send the raised ETH to the recipient
+            (bool sc,) = payable(recipient).call{value: address(this).balance}("");
             require(sc, "Transfer failed");
         } else {
-            // If the soft cap is not reached, send the unsold tokens back to the owner
-            houdiniToken.transfer(owner, TOTAL_SALE_AMOUNT);
+            // If the soft cap is not reached, send the unsold tokens back to the recipient
+            houdiniToken.transfer(recipient, TOTAL_SALE_AMOUNT);
         }
 
         emit SaleEnded(totalTokensBought, softCapReached);

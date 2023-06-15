@@ -24,7 +24,7 @@ const config: HardhatUserConfig = {
       zksync: true,
       ethNetwork: "goerli",
       url: "https://zksync2-testnet.zksync.dev",
-      verifyURL: "https://testnet-explorer.zksync.dev/contract_verification",
+      verifyURL: "https://zksync2-testnet-explorer.zksync.dev/contract_verification",
     },
   },
   etherscan: {
