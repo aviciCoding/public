@@ -29,3 +29,4 @@ The deployer shoudl also send the tokens for the public sale to this contract.
 After the sale is over, anyone can call the `endSale()` function to process the result of the sale.
 
 To claim or aidrop tokens or refund the ETH, anyone can call the `aridrop(address[])` function, which will do one or the other depending on the result of the sale. If the sale was successful, the airdrop function will only work after the airdrop start time has been reached.
+# public
