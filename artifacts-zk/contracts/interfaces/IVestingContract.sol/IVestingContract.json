@@ -1,0 +1,45 @@
+{
+  "_format": "hh-zksolc-artifact-1",
+  "contractName": "IVestingContract",
+  "sourceName": "contracts/interfaces/IVestingContract.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_beneficiary",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_start",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_duration",
+          "type": "uint256"
+        },
+        {
+          "internalType": "enum IVestingContract.DurationUnits",
+          "name": "_durationUnits",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_amountTotal",
+          "type": "uint256"
+        }
+      ],
+      "name": "createVestingSchedule",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "factoryDeps": {}
+}

@@ -81,7 +81,7 @@ contract VestingContract {
         uint256 _duration,
         DurationUnits _durationUnits,
         uint256 _amountTotal
-    ) external {
+    ) public {
         // perform input checks
         require(_beneficiary != address(0), "VestingContract: beneficiary is the zero address");
         require(_amountTotal > 0, "VestingContract: amount is 0");
@@ -105,10 +105,33 @@ contract VestingContract {
     }
 
     /**
+     * @notice Creates the same vesting schedule for a list of beneficiaries
+     * @param _beneficiaries The array of addresses of the beneficiaries
+     * @param _start The start UNIX timestamp of the vesting period
+     * @param _duration The duration of the vesting period in DurationUnits
+     * @param _durationUnits The units of the duration(0 = days, 1 = weeks, 2 = months)
+     * @param _amountTotal The total amount of tokens to be vested per beneficiary
+     */
+    function batchCreateVestingSchedule(
+        address[] calldata _beneficiaries,
+        uint256 _start,
+        uint256 _duration,
+        DurationUnits _durationUnits,
+        uint256 _amountTotal
+    ) external {
+        uint256 beneficiariesLength = _beneficiaries.length;
+        require(beneficiariesLength > 0, "VestingContract: no beneficiaries provided");
+
+        for (uint256 i = 0; i < beneficiariesLength; i++) {
+            createVestingSchedule(_beneficiaries[i], _start, _duration, _durationUnits, _amountTotal);
+        }
+    }
+
+    /**
      * @notice Releases the vested tokens for a beneficiary
      * @param _beneficiary The address of the beneficiary
      */
-    function release(address _beneficiary) external {
+    function release(address _beneficiary) public {
         VestingSchedule[] storage schedules = vestingSchedules[_beneficiary];
         uint256 schedulesLength = schedules.length;
         require(schedulesLength > 0, "VestingContract: no vesting schedules for beneficiary");
@@ -131,6 +154,19 @@ contract VestingContract {
         }
 
         emit TokensReleased(_beneficiary, totalRelease);
+    }
+
+    /**
+     * @notice Releases the vested tokens for a list of beneficiaries
+     * @param _beneficiaries The addresses of the beneficiaries
+     */
+    function batchRelease(address[] calldata _beneficiaries) external {
+        uint256 beneficiariesLength = _beneficiaries.length;
+        require(beneficiariesLength > 0, "VestingContract: no beneficiaries provided");
+
+        for (uint256 i = 0; i < beneficiariesLength; i++) {
+            release(_beneficiaries[i]);
+        }
     }
 
     /**

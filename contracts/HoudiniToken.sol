@@ -9,13 +9,13 @@ contract HoudiniToken is ERC20, Initializable {
     VestingContract vestingContract;
 
     uint256 public constant TOTAL_SUPPLY = 10_000_000 * 10 ** 18;
-    uint256 public constant REWARDS = 4_500_000 * 10 ** 18;
-    uint256 public constant PRIVATE_SALE = 1_800_000 * 10 ** 18;
-    uint256 public constant PUBLIC_SALE = 1_300_000 * 10 ** 18;
+    uint256 public constant REWARDS = 6_281_000 * 10 ** 18;
+    uint256 public constant PRIVATE_SALE = 969_231 * 10 ** 18;
+    uint256 public constant PUBLIC_SALE = 700_000 * 10 ** 18;
     uint256 public constant COMMUNITY_AIRDROP = 1_000_000 * 10 ** 18;
-    uint256 public constant MARKETING_DEVELOPMENT = 800_000 * 10 ** 18;
+    uint256 public constant MARKETING_DEVELOPMENT = 500_000 * 10 ** 18;
     uint256 public constant TEAM = 500_000 * 10 ** 18;
-    uint256 public constant LIQUIDITY = 100_000 * 10 ** 18;
+    uint256 public constant LIQUIDITY = 849_769 * 10 ** 18;
 
     address[6] public wallets; // [projectWallet, rewardsWallet, communityAirdropWallet, marketingDevelopmentWallet, teamWallet, liquidityWallet]
 
@@ -30,7 +30,7 @@ contract HoudiniToken is ERC20, Initializable {
      * [4] teamWallet
      * [5] liquidityWallet
      */
-    constructor(address[6] memory _wallets) ERC20("Houdini Toklen", "HDNMTK") {
+    constructor(address[6] memory _wallets) ERC20("Houdini", "HDNI") {
         vestingContract = new VestingContract(address(this));
         _mint(address(this), TOTAL_SUPPLY);
 
